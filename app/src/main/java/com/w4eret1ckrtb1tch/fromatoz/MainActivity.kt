@@ -60,6 +60,8 @@ class MainActivity : AppCompatActivity() {
     private val alphabetAdapter by lazy(LazyThreadSafetyMode.NONE) {
         ItemsAdapter(
             onAlphabetClickListener = { marker, selectPosition ->
+                Log.d("TAG", "marker :$marker ")
+                Log.d("TAG", "selectPosition :$selectPosition ")
                 scrollToPosition(marker)
                 selectMarker(selectPosition)
             }
@@ -74,11 +76,9 @@ class MainActivity : AppCompatActivity() {
         alphabet.forEach { label ->
             val contactGroup = sortedItems
                 .filter { it.lastName.first() == label.label }
-                .toMutableList<Item>()
-
+                .toList()
             if (contactGroup.isNotEmpty()) {
-                contactGroup.add(0, label)
-                items.addAll(contactGroup)
+                items.plusAssign(listOf(label).plus(contactGroup))
             }
         }
         Log.d("TAG", "alphabet: $alphabet")
@@ -87,7 +87,9 @@ class MainActivity : AppCompatActivity() {
         binding.contacts.apply {
             layoutManager = ItemsLinearLayoutManager(this@MainActivity)
             adapter = contactAdapter
+            addItemDecoration(HeaderDecoration(this@MainActivity, this, R.layout.item_header))
         }
+
         binding.alphabet.adapter = alphabetAdapter
         contactAdapter.items = items
         alphabetAdapter.items = alphabet
