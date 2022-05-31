@@ -11,7 +11,7 @@ sealed class Item {
         val lastName: String
     ) : Item()
 
-    data class Marker(
+    data class Header(
         val label: Char,
         val isSelected: Boolean = false
     ) : Item()
