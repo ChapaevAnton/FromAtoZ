@@ -11,27 +11,38 @@ import android.util.DisplayMetrics
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.annotation.ColorRes
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 class ItemsHeaderDecorator(
     private val context: Context,
+    heightDipDivider: Float = DEFAULT_DIVIDER_HEIGHT,
+    @ColorRes colorResDivider: Int? = null,
     private val getItems: () -> List<Item.Contact>
 ) : RecyclerView.ItemDecoration() {
 
-    private val dividerHeight = dipToPx(0.8F)
-    private val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).also {
-        it.color = Color.parseColor("#ff0000")
+    //высота разделителя
+    private val dividerHeight = fromDipToPx(heightDipDivider)
+
+    //цвет разделителя
+    private val dividerPaint = Paint(Paint.ANTI_ALIAS_FLAG).also { paint ->
+        paint.color =
+            colorResDivider?.let { ContextCompat.getColor(context, it) } ?: Color.TRANSPARENT
     }
 
-    private val sectionItemWidth: Int by lazy {
-        getScreenWidth()
+    //ширина элемента "заголовок"
+    private val headerWidth: Int by lazy {
+        getScreenWidthPx()
     }
 
-    private val sectionItemHeight: Int by lazy {
-        dipToPx(50F)
+    //высота элемента "заголовок"
+    private val headerHeight: Int by lazy {
+        fromDipToPx(HEADER_HEIGHT)
     }
 
+    //получаем смещение для размещения "загловков" или "разделителя"
     override fun getItemOffsets(
         outRect: Rect,
         view: View,
@@ -39,91 +50,99 @@ class ItemsHeaderDecorator(
         state: RecyclerView.State
     ) {
         super.getItemOffsets(outRect, view, parent, state)
-
+        //проверка установлен ли вертикальный линейный менеджер
         val layoutManager = parent.layoutManager
         if (layoutManager !is LinearLayoutManager) return
         if (layoutManager.orientation != LinearLayoutManager.VERTICAL) return
-
-        val list = getItems()
-        if (list.isEmpty()) return
-
+        //проверка не пустой ли список элементов "данных"
+        if (getItems().isEmpty()) return
+        //позиция элемента в адаптере
         val position = parent.getChildLayoutPosition(view)
-        if (position == 0) {
-            outRect.top = sectionItemHeight
-            return
-        }
-
-        val currentModel = getItems()[position]
-        val previousModel = getItems()[position - 1]
-        if (currentModel.lastName.first() != previousModel.lastName.first()) {
-            outRect.top = sectionItemHeight
+        //если элемент - это заголовок
+        if (isHeaderItem(position)) {
+            //то задаем высоту для "заголовка"
+            outRect.top = headerHeight
         } else {
+            //то задаем высоту для "разделителя" элементов
             outRect.top = dividerHeight
         }
     }
 
-    override fun onDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
-        super.onDraw(c, parent, state)
-
-        val childCount = parent.childCount
-        for (i in 0 until childCount) {
-            val childView: View = parent.getChildAt(i)
-            val position: Int = parent.getChildAdapterPosition(childView)
-            val itemModel = getItems()[position]
-
-            if (getItems().isNotEmpty() &&
-                (position == 0 || itemModel.lastName.first() != getItems()[position - 1].lastName.first())
-            ) {
-                val top = childView.top - sectionItemHeight
-                drawSectionView(c, itemModel.lastName.first(), top)
+    override fun onDraw(canvas: Canvas, parent: RecyclerView, state: RecyclerView.State) {
+        super.onDraw(canvas, parent, state)
+        //проверка не пустой ли список элементов "данных"
+        if (getItems().isEmpty()) return
+        //перебираем view списка
+        for (i in 0 until parent.childCount) {
+            //получаем view по текущему индексу
+            val view = parent.getChildAt(i)
+            //получаем позицию в адаптере данного view
+            val position = parent.getChildAdapterPosition(view)
+            //если элемент - это заголовок
+            if (isHeaderItem(position)) {
+                //отрисовываем заголовок по полученным "данным" из модели - берем первую букву фамилии
+                drawHeader(canvas, getItems()[position].lastName.first(), view.top)
             } else {
-                drawDivider(c, childView)
+                //иначе отрисовываем разделитель
+                drawDivider(canvas, view)
             }
         }
     }
 
+    //отрисовка разделителя
     private fun drawDivider(canvas: Canvas, childView: View) {
         canvas.drawRect(
-            0f,
+            0F,
             (childView.top - dividerHeight).toFloat(),
             childView.right.toFloat(),
-            childView.top.toFloat(),
+            childView.bottom.toFloat(),
             dividerPaint
         )
     }
 
-    private fun drawSectionView(canvas: Canvas, label: Char, top: Int) {
+    //отрисовка "заголовка"
+    private fun drawHeader(canvas: Canvas, label: Char, viewTop: Int) {
+        //создаем элемент "заголовка"
         val view = HeaderHolder(context)
+        //устанавливаем название "заголовка"
         view.setLabel(label)
-
+        //конвертируем viewGroup "заголовка" в bitmap изображение
         val bitmap = getViewGroupBitmap(view)
-        val bitmapCanvas = Canvas(bitmap)
-        view.draw(bitmapCanvas)
-
-        canvas.drawBitmap(bitmap, 0F, top.toFloat(), null)
+        //задаем верхнюю точку от которой будет отрисовываться
+        // "заголовок", за разницей размера высоты самого "заголовка" - тем самы
+        // выделяя область для отрисовки "заголовка"
+        val top = viewTop - headerHeight.toFloat()
+        //отрисовываем полученное изображения "заголовка" на холсте элемента
+        canvas.drawBitmap(bitmap, 0F, top, null)
+        //перерисовываем viewGroup
+        view.draw(Canvas(bitmap))
     }
 
+    //конвертация viewGroup в bitmap
     private fun getViewGroupBitmap(viewGroup: ViewGroup): Bitmap {
-        val layoutParams = ViewGroup.LayoutParams(sectionItemWidth, sectionItemHeight)
+        //устанавливаем размер viewGroup
+        val layoutParams = ViewGroup.LayoutParams(headerWidth, headerHeight)
         viewGroup.layoutParams = layoutParams
-
+        //вычислении требований к размеру текущего viewGroup и всех его вложенных view
         viewGroup.measure(
-            View.MeasureSpec.makeMeasureSpec(sectionItemWidth, View.MeasureSpec.EXACTLY),
-            View.MeasureSpec.makeMeasureSpec(sectionItemHeight, View.MeasureSpec.EXACTLY)
+            View.MeasureSpec.makeMeasureSpec(headerWidth, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(headerHeight, View.MeasureSpec.EXACTLY)
         )
-        viewGroup.layout(0, 0, sectionItemWidth, sectionItemHeight)
-
+        //выделяем требуемый размер во viewGroup для дочерних view
+        viewGroup.layout(0, 0, headerWidth, headerHeight)
+        //создаем bitmap изображение
         val bitmap = Bitmap.createBitmap(viewGroup.width, viewGroup.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        viewGroup.draw(canvas)
-
+        //перерисовываем viewGroup
+        viewGroup.draw(Canvas(bitmap))
         return bitmap
     }
 
-    private fun dipToPx(dpValue: Float): Int =
-        (dpValue * context.resources.displayMetrics.density).toInt()
+    //преобразование dp в px
+    private fun fromDipToPx(dipValue: Float): Int =
+        (dipValue * context.resources.displayMetrics.density).toInt()
 
-    private fun getScreenWidth(): Int {
+    //получение ширины экрана в px
+    private fun getScreenWidthPx(): Int {
         val outMetric = DisplayMetrics()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -135,5 +154,18 @@ class ItemsHeaderDecorator(
             display.getMetrics(outMetric)
         }
         return outMetric.widthPixels
+    }
+
+    //если это 0 позиция (первая) ИЛИ если текущий элемент не из группы предыдущего - по первой букве фамилии) то это "заголовок"
+    private fun isHeaderItem(position: Int): Boolean {
+        if (position == 0) return true
+        val current = getItems()[position].lastName.first()
+        val previous = getItems()[position.minus(1)].lastName.first()
+        return current != previous
+    }
+
+    private companion object {
+        const val DEFAULT_DIVIDER_HEIGHT = 0.8F
+        const val HEADER_HEIGHT = 50F
     }
 }

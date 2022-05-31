@@ -88,7 +88,11 @@ class MainActivity : AppCompatActivity() {
         binding.contacts.apply {
             layoutManager = ItemsLinearLayoutManager(this@MainActivity)
             adapter = contactAdapter
-            addItemDecoration(ItemsHeaderDecorator(this@MainActivity) { contactAdapter.items as List<Contact> })
+            addItemDecoration(ItemsHeaderDecorator(
+                context = this@MainActivity,
+                colorResDivider = R.color.temp,
+                getItems = { contactAdapter.items as List<Contact> }
+            ))
         }
         binding.alphabet.adapter = alphabetAdapter
 
