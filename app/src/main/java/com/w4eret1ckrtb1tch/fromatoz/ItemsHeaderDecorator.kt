@@ -59,8 +59,9 @@ class ItemsHeaderDecorator(
         if (layoutManager.orientation != LinearLayoutManager.VERTICAL) return
         //проверка не пустой ли список элементов "данных"
         if (getItems().isEmpty()) return
-        //позиция элемента в адаптере
-        val position = parent.getChildLayoutPosition(view)
+        //получаем позицию в адаптере данного view
+        val position = parent.getChildAdapterPosition(view)
+            .takeIf { it != RecyclerView.NO_POSITION } ?: return
         //если элемент - это заголовок
         if (isHeaderItem(position)) {
             //то задаем высоту для "заголовка"
@@ -81,6 +82,7 @@ class ItemsHeaderDecorator(
             val view = parent.getChildAt(i)
             //получаем позицию в адаптере данного view
             val position = parent.getChildAdapterPosition(view)
+                .takeIf { it != RecyclerView.NO_POSITION } ?: return
             //если элемент - это заголовок
             if (isHeaderItem(position)) {
                 //отрисовываем заголовок

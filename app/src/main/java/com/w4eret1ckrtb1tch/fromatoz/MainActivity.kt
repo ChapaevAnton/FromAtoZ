@@ -54,6 +54,7 @@ class MainActivity : AppCompatActivity() {
         .toList()
 
     private lateinit var binding: ActivityMainBinding
+
     private val contactAdapter by lazy(LazyThreadSafetyMode.NONE) {
         ItemsAdapter()
     }
@@ -66,6 +67,17 @@ class MainActivity : AppCompatActivity() {
                 selectMarker(selectPosition)
             }
         )
+    }
+    private val contactDecorator by lazy {
+        ItemsHeaderDecorator(
+            context = this@MainActivity,
+            colorResDivider = R.color.temp,
+            getItems = { contactAdapter.items as List<Contact> }
+        )
+    }
+
+    private val centerSmoothScroller by lazy {
+        CenterSmoothScroller(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,11 +100,7 @@ class MainActivity : AppCompatActivity() {
         binding.contacts.apply {
             layoutManager = ItemsLinearLayoutManager(this@MainActivity)
             adapter = contactAdapter
-            addItemDecoration(ItemsHeaderDecorator(
-                context = this@MainActivity,
-                colorResDivider = R.color.temp,
-                getItems = { contactAdapter.items as List<Contact> }
-            ))
+            addItemDecoration(contactDecorator)
         }
         binding.alphabet.adapter = alphabetAdapter
 
@@ -102,6 +110,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun selectMarker(position: Int) {
         alphabetAdapter.selectMarker(position)
+        centerSmoothScroller.targetPosition = position
+        binding.alphabet
+            .layoutManager
+            ?.startSmoothScroll(centerSmoothScroller)
     }
 
     private fun scrollToPosition(header: Header) {
