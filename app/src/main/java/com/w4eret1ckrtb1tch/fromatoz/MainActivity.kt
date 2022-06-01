@@ -55,7 +55,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     private val contactAdapter by lazy(LazyThreadSafetyMode.NONE) {
-        ItemsAdapter()
+        ItemsAdapter(
+            onContactClickListener = { contact ->
+                deleteContact(contact)
+            }
+        )
     }
     private val alphabetAdapter by lazy(LazyThreadSafetyMode.NONE) {
         ItemsAdapter(
@@ -113,6 +117,11 @@ class MainActivity : AppCompatActivity() {
         binding.alphabet
             .layoutManager
             ?.startSmoothScroll(centerSmoothScroller)
+    }
+
+    private fun deleteContact(contact: Contact) {
+        items.remove(contact)
+        contactAdapter.deleteContact(contact)
     }
 
     private fun scrollToPosition(header: Header) {

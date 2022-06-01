@@ -60,7 +60,7 @@ class ItemsHeaderDecorator(
         //проверка не пустой ли список элементов "данных"
         if (getItems().isEmpty()) return
         //получаем позицию в адаптере данного view
-        val position = parent.getChildLayoutPosition(view)
+        val position = parent.getChildAdapterPosition(view)
             .takeIf { it != RecyclerView.NO_POSITION } ?: return
         //если элемент - это заголовок
         if (isHeaderItem(position)) {

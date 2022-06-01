@@ -11,7 +11,8 @@ import com.w4eret1ckrtb1tch.fromatoz.databinding.ItemContactBinding
 import com.w4eret1ckrtb1tch.fromatoz.databinding.ItemHeaderBinding
 
 class ItemsAdapter(
-    private val onAlphabetClickListener: ((header: Header, selectPosition: Int) -> Unit)? = null
+    private val onAlphabetClickListener: ((header: Header, selectPosition: Int) -> Unit)? = null,
+    private val onContactClickListener: ((contact: Contact) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     var items: List<Item> = emptyList()
@@ -36,9 +37,18 @@ class ItemsAdapter(
         diffResult.dispatchUpdatesTo(this)
     }
 
+    fun deleteContact(contact: Contact) {
+        val newList = items.toMutableList()
+        newList.remove(contact)
+        val diffUtil = ItemsDiffUtil(items, newList)
+        val diffResult = DiffUtil.calculateDiff(diffUtil)
+        items = newList
+        diffResult.dispatchUpdatesTo(this)
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
         when (viewType) {
-            R.layout.item_contact -> ContactHolder.create(parent)
+            R.layout.item_contact -> ContactHolder.create(parent, onContactClickListener)
             R.layout.item_header -> LabelHolder.create(parent, onAlphabetClickListener)
             else -> throw IllegalArgumentException("Illegal type $viewType")
         }
@@ -71,22 +81,35 @@ class ItemsAdapter(
         }
 
     class ContactHolder private constructor(
-        private val binding: ItemContactBinding
+        private val binding: ItemContactBinding,
+        private val onContactClickListener: ((contact: Contact) -> Unit)? = null
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(contact: Contact) =
-            with(binding) {
-                val fullName = "${contact.lastName} ${contact.firstName}"
-                title.text = fullName
-                avatar.setImageResource(contact.resId)
+        lateinit var contact: Contact
+
+        init {
+            binding.contactContainer.setOnClickListener {
+                onContactClickListener?.invoke(contact)
+
             }
+        }
+
+        fun bind(contact: Contact) = with(binding) {
+            this@ContactHolder.contact = contact
+            val fullName = "${contact.lastName} ${contact.firstName}"
+            title.text = fullName
+            avatar.setImageResource(contact.resId)
+        }
 
         companion object {
 
-            fun create(parent: ViewGroup): ContactHolder {
+            fun create(
+                parent: ViewGroup,
+                onContactClickListener: ((contact: Contact) -> Unit)? = null
+            ): ContactHolder {
                 val inflater = LayoutInflater.from(parent.context)
                 val binding = ItemContactBinding.inflate(inflater, parent, false)
-                return ContactHolder(binding)
+                return ContactHolder(binding, onContactClickListener)
             }
 
             fun getDiffUtil() = object : DiffUtil.ItemCallback<Contact>() {
