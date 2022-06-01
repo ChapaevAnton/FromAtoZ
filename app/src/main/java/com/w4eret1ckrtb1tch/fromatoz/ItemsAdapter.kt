@@ -18,7 +18,7 @@ class ItemsAdapter(
     var items: List<Item> = emptyList()
         set(value) {
             val newList = value.toList()
-            val diffUtil = ItemsDiffUtil(value, newList)
+            val diffUtil = ItemsDiffUtil(field, newList)
             val diffResult = DiffUtil.calculateDiff(diffUtil)
             field = newList
             diffResult.dispatchUpdatesTo(this)
@@ -31,19 +31,13 @@ class ItemsAdapter(
                 (item as Header).copy(isSelected = index == selectPosition)
             }
             .toList()
-        val diffUtil = ItemsDiffUtil(items, newList)
-        val diffResult = DiffUtil.calculateDiff(diffUtil)
         items = newList
-        diffResult.dispatchUpdatesTo(this)
     }
 
     fun deleteContact(contact: Contact) {
         val newList = items.toMutableList()
         newList.remove(contact)
-        val diffUtil = ItemsDiffUtil(items, newList)
-        val diffResult = DiffUtil.calculateDiff(diffUtil)
         items = newList
-        diffResult.dispatchUpdatesTo(this)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
