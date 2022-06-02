@@ -1,5 +1,6 @@
 package com.w4eret1ckrtb1tch.fromatoz
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
@@ -25,19 +26,20 @@ class ItemsAdapter(
         }
 
     fun selectMarker(selectPosition: Int) {
-        val newList = items
+        items = items
             .asSequence()
             .mapIndexed { index, item ->
                 (item as Header).copy(isSelected = index == selectPosition)
             }
             .toList()
-        items = newList
+        Log.d("TAG", "selectMarker: $items")
     }
 
-    fun deleteContact(contact: Contact) {
-        val newList = items.toMutableList()
-        newList.remove(contact)
-        items = newList
+    fun deleteContact(position: Int) {
+        items = items
+            .toMutableList()
+            .also { it.removeAt(position) }
+        Log.d("TAG", "deleteContact: $items")
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
@@ -84,7 +86,6 @@ class ItemsAdapter(
         init {
             binding.contactContainer.setOnClickListener {
                 onContactClickListener?.invoke(contact)
-
             }
         }
 

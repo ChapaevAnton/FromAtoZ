@@ -3,6 +3,7 @@ package com.w4eret1ckrtb1tch.fromatoz
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.ItemTouchHelper
 import com.w4eret1ckrtb1tch.fromatoz.Item.Contact
 import com.w4eret1ckrtb1tch.fromatoz.Item.Header
 import com.w4eret1ckrtb1tch.fromatoz.databinding.ActivityMainBinding
@@ -55,11 +56,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     private val contactAdapter by lazy(LazyThreadSafetyMode.NONE) {
-        ItemsAdapter(
-            onContactClickListener = { contact ->
-                deleteContact(contact)
-            }
-        )
+        ItemsAdapter()
     }
     private val alphabetAdapter by lazy(LazyThreadSafetyMode.NONE) {
         ItemsAdapter(
@@ -83,6 +80,16 @@ class MainActivity : AppCompatActivity() {
         CenterSmoothScroller(this)
     }
 
+    private val itemTouchHelper by lazy {
+        ItemTouchHelper(
+            ItemsSwipeToDelete(
+                onContactSwipeListener = { position ->
+                    deleteContact(position)
+                }
+            )
+        )
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -104,6 +111,7 @@ class MainActivity : AppCompatActivity() {
             layoutManager = ItemsLinearLayoutManager(this@MainActivity)
             adapter = contactAdapter
             addItemDecoration(contactDecorator)
+            itemTouchHelper.attachToRecyclerView(this)
         }
         binding.alphabet.adapter = alphabetAdapter
 
@@ -119,9 +127,9 @@ class MainActivity : AppCompatActivity() {
             ?.startSmoothScroll(centerSmoothScroller)
     }
 
-    private fun deleteContact(contact: Contact) {
-        items.remove(contact)
-        contactAdapter.deleteContact(contact)
+    private fun deleteContact(position: Int) {
+        items.removeAt(position)
+        contactAdapter.deleteContact(position)
     }
 
     private fun scrollToPosition(header: Header) {

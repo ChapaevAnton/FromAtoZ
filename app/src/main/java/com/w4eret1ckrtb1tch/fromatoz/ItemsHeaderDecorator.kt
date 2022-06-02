@@ -61,7 +61,8 @@ class ItemsHeaderDecorator(
         if (getItems().isEmpty()) return
         //получаем позицию в адаптере данного view
         val position = parent.getChildAdapterPosition(view)
-            .takeIf { it != RecyclerView.NO_POSITION } ?: return
+            .takeIf { it != RecyclerView.NO_POSITION }
+            ?: parent.getChildViewHolder(view).oldPosition
         //если элемент - это заголовок
         if (isHeaderItem(position)) {
             //то задаем высоту для "заголовка"
